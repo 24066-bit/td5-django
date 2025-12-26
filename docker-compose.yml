@@ -1,0 +1,11 @@
+services:
+  web:
+    build: .
+    container_name: td5_web_25066
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:25066:8000"
+    volumes:
+      - ./data:/data
+    environment:
+      - DJANGO_SQLITE_PATH=/data/db.sqlite3
