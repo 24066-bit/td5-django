@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Taux de Change BCM</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+        }
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        table {
+            width: 100%;
+            background-color: white;
+            border-collapse: collapse;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #34495e;
+            color: white;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        .info {
+            text-align: center;
+            color: #7f8c8d;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Taux de Change MRU - BCM</h1>
+    
+    <div class="controls">
+        <button onclick="updateRates()">Mettre à jour les taux</button>
+    </div>
+    
+    {% if last_update %}
+    <p class="info">Dernière mise à jour : {{ last_update }}</p>
+    {% endif %}
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Devise</th>
+                <th>Taux (MRU)</th>
+                <th>Source</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for rate in rates %}
+            <tr>
+                <td>{{ rate.date }}</td>
+                <td>{{ rate.currency }}</td>
+                <td>{{ rate.rate }}</td>
+                <td>{{ rate.source }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" style="text-align: center;">
+                    Aucune donnée disponible. Cliquez sur "Mettre à jour" pour récupérer les taux.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <script>
+        function updateRates() {
+            fetch('/update/')
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                    location.reload();
+                })
+                .catch(error => {
+                    alert('Erreur: ' + error);
+                });
+        }
+    </script>
+</body>
+</html>
