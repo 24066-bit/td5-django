@@ -1,9 +1,8 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render
 from django.http import JsonResponse
 from .models import ExchangeRate
-from datetime import datetime, timedelta
+from datetime import datetime
 import requests
-from bs4 import BeautifulSoup
 
 def index(request):
     """Page d'accueil - Visualisation des taux de change"""
@@ -16,24 +15,38 @@ def index(request):
     return render(request, 'rates/index.html', context)
 
 def update_rates(request):
-    """Mise à jour des taux depuis la BCM"""
+    """Récupérer les vrais taux depuis l'API"""
     try:
-        # URL de la BCM pour les taux de change
-        url = "https://www.bcm.mr/Taux-de-change"
+        # API gratuite pour les taux de change
+        url = "https://api.exchangerate-api.com/v4/latest/USD"
+        response = requests.get(url, timeout=10)
+        data = response.json()
         
-        # Pour l'instant, on crée des données de test
-        # Le scraping réel sera ajouté ensuite
+        # Calculer les taux vers MRU
         today = datetime.now().date()
-        currencies = ['USD', 'EUR', 'CNY']
-        test_rates = {'USD': 36.5, 'EUR': 39.8, 'CNY': 5.2}
         
-        for currency in currencies:
+        rates_data = {
+            'USD': data['rates']['MRU'],
+            'EUR': data['rates']['MRU'] / data['rates']['EUR'],
+            'CNY': data['rates']['MRU'] / data['rates']['CNY']
+        }
+        
+        # Sauvegarder dans la base de données
+        for currency, rate in rates_data.items():
             ExchangeRate.objects.update_or_create(
                 date=today,
                 currency=currency,
-                defaults={'rate': test_rates[currency], 'source': 'BCM'}
+                defaults={'rate': round(rate, 4), 'source': 'API ExchangeRate'}
             )
         
-        return JsonResponse({'status': 'success', 'message': 'Données mises à jour'})
+        return JsonResponse({
+            'status': 'success',
+            'message': f'Taux mis à jour : USD={rates_data["USD"]:.2f}, EUR={rates_data["EUR"]:.2f}, CNY={rates_data["CNY"]:.2f} MRU',
+            'date': str(today)
+        })
+        
     except Exception as e:
-        return JsonResponse({'status': 'error', 'message': str(e)})
+        return JsonResponse({
+            'status': 'error',
+            'message': f'Erreur lors de la récupération des taux : {str(e)}'
+        }, status=500)
